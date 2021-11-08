@@ -1,4 +1,3 @@
-#!/QOpenSys/pkgs/bin/bash
+#!/usr/bin/env bash
 export LC_ALL=EN_US.UTF-8
-: ${JAVA_HOME=/QOpenSys/QIBM/ProdData/JavaVM/jdk80/64bit}
-exec $JAVA_HOME/bin/java -cp $(dirname $0)/../lib/jping/jping.jar com.github.ibmioss.jping.JPingCmd $*
+exec java -cp $(dirname $0)/../lib/jping/jping.jar com.github.ibmioss.jping.JPingCmd $*

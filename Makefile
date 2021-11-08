@@ -20,5 +20,5 @@ clean:
 
 install: scripts/jping target/jping.jar 
 	install -m 755 -o qsys -D -d ${INSTALL_ROOT}/QOpenSys/pkgs/bin ${INSTALL_ROOT}/QOpenSys/pkgs/lib/jping
-	install -m 555 -o qsys scripts/* ${INSTALL_ROOT}/QOpenSys/pkgs/bin/
+	install -m 555 -o qsys scripts/jping.ibmi ${INSTALL_ROOT}/QOpenSys/pkgs/bin/jping
 	install -m 444 -o qsys target/jping.jar ${INSTALL_ROOT}/QOpenSys/pkgs/lib/jping/jping.jar
