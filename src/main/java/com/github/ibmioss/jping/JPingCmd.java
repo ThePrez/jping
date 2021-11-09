@@ -6,7 +6,6 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
@@ -18,6 +17,10 @@ import com.github.ibmioss.jping.StringUtils.TerminalColor;
  * @author Jesse Gorzinski
  */
 public class JPingCmd {
+    private static int s_failures = 0; // some bold assumptions that this is only ever run as a command line tool and never used as a library component
+    private static int s_successes = 0;
+    private static boolean s_isNumSuccessesPrinted = false;
+    private static Object s_successNumbersLock = new String("Success numbers lock");
 
     public static void main(final String... _args) {
         final LinkedList<String> args = new LinkedList<String>(Arrays.asList(_args));
@@ -29,7 +32,7 @@ public class JPingCmd {
         String localAddr = null;
         try {
             while (!args.isEmpty()) {
-                String arg = args.removeFirst();
+                final String arg = args.removeFirst();
                 if ("-h".equals(arg) || "--help".equals(arg)) {
                     printUsageAndExit();
                 } else if ("-i".equals(arg)) {
@@ -63,7 +66,7 @@ public class JPingCmd {
         } else {
             try {
                 nf = NetworkInterface.getByInetAddress(InetAddress.getByName(localAddr));
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 nf = null;
                 System.err.println(StringUtils.colorizeForTerminal(String.format("ERROR: Cannot resolve interface for address '%s'", localAddr), TerminalColor.BRIGHT_RED));
                 printUsageAndExit();
@@ -71,42 +74,55 @@ public class JPingCmd {
         }
 
         InetAddress addr = null;
-        int failures = 0;
-        int successes = 0;
         try {
             addr = InetAddress.getByName(hostname);
             System.out.printf("Pinging %s [%s] with 32 bytes of data:\n", addr.getCanonicalHostName(), "" + addr.getHostAddress());
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> printNumSuccesses()));
             for (long i = 1; i <= numTries; ++i) {
-                PingResult result = ping(addr, nf, ttl, timeout);
+                final PingResult result = ping(addr, nf, ttl, timeout);
                 result.println(System.out);
                 if (result.isSuccess()) {
-                    successes++;
+                    synchronized (s_successNumbersLock) {
+                        s_successes++;
+                    }
                 } else {
-                    failures++;
+                    synchronized (s_successNumbersLock) {
+                        s_failures++;
+                    }
                 }
                 try {
                     Thread.sleep(333);
-                } catch (Exception e) {
+                } catch (final Exception e) {
                 }
             }
-            System.out.print(StringUtils.colorizeForTerminal(String.format("%d of %d attempts were successful\n", successes, successes + failures), TerminalColor.CYAN));
-        } catch (UnknownHostException e) {
+            printNumSuccesses();
+        } catch (final UnknownHostException e) {
             System.err.println(StringUtils.colorizeForTerminal(String.format("ERROR: Unknown host '%s'", hostname), TerminalColor.RED));
         }
 
     }
 
-    private static PingResult ping(InetAddress _addr, NetworkInterface _intf, int _ttl, int _timeout) {
+    private static synchronized void printNumSuccesses() {
+        synchronized (s_successNumbersLock) {
+            if (s_isNumSuccessesPrinted) {
+                return;
+            }
+            System.out.print(StringUtils.colorizeForTerminal(String.format("%d of %d attempts were successful\n", s_successes, s_successes + s_failures), TerminalColor.CYAN));
+            s_isNumSuccessesPrinted = true;
+        }
+    }
+
+    private static PingResult ping(final InetAddress _addr, final NetworkInterface _intf, final int _ttl, final int _timeout) {
         try {
             final long startTs = System.currentTimeMillis();
-            boolean isReachable = _addr.isReachable(_intf, _ttl, _timeout);
+            final boolean isReachable = _addr.isReachable(_intf, _ttl, _timeout);
             final long endTs = System.currentTimeMillis();
             final long duration = endTs - startTs;
-            if(duration > (2+_timeout)) {
+            if (duration > (2 + _timeout)) {
                 return new PingResult(false, -1, _addr, null);
             }
             return new PingResult(isReachable, Math.min(_timeout, duration), _addr, null);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             return new PingResult(false, -1, _addr, e);
         }
 
@@ -129,13 +145,13 @@ public class JPingCmd {
 
     private static class PingResult {
 
-        private boolean m_success;
-        private long m_time;
-        private InetAddress m_addr;
-        private IOException m_exc;
-        private int m_bytes = 32;
+        private final boolean m_success;
+        private final long m_time;
+        private final InetAddress m_addr;
+        private final IOException m_exc;
+        private final int m_bytes = 32;
 
-        public PingResult(boolean _b, long _time, InetAddress _addr, IOException _e) {
+        public PingResult(final boolean _b, final long _time, final InetAddress _addr, final IOException _e) {
             m_success = _b && null == _e;
             m_time = _time;
             m_addr = _addr;
@@ -147,7 +163,7 @@ public class JPingCmd {
             return m_success;
         }
 
-        public void println(PrintStream _out) {
+        public void println(final PrintStream _out) {
             if (null != m_exc) {
                 _out.println(StringUtils.colorizeForTerminal("Network Error: " + m_exc.getLocalizedMessage(), TerminalColor.RED));
             } else if (!m_success) {
