@@ -118,10 +118,10 @@ public class JPingCmd {
             final boolean isReachable = _addr.isReachable(_intf, _ttl, _timeout);
             final long endTs = System.currentTimeMillis();
             final long duration = endTs - startTs;
-            if (duration > (2 + _timeout)) {
+            if (duration > _timeout) {
                 return new PingResult(false, -1, _addr, null);
             }
-            return new PingResult(isReachable, Math.min(_timeout, duration), _addr, null);
+            return new PingResult(isReachable, duration, _addr, null);
         } catch (final IOException e) {
             return new PingResult(false, -1, _addr, e);
         }
