@@ -1,19 +1,22 @@
 
 
 
-target/jping.jar: FORCE
-	mvn package
+target/jping.jar: FORCE /QOpenSys/pkgs/bin/mvn
+	JAVA_HOME=/QOpenSys/QIBM/ProdData/JavaVM/jdk80/64bit /QOpenSys/pkgs/bin/mvn package
 	cp target/*-with-dependencies.jar target/jping.jar
 
 FORCE:
 
-all: target/jping.jar tarball zipball
+all: target/jping.jar tarball
 
 uninstall: clean
 	rm -r ${INSTALL_ROOT}/QOpenSys/pkgs/lib/jping ${INSTALL_ROOT}/QOpenSys/pkgs/bin/jping ${INSTALL_ROOT}/QOpenSys/pkgs/bin/jping
 
 clean:
 	rm -r target
+
+/QOpenSys/pkgs/bin/mvn:
+	/QOpenSys/pkgs/bin/yum install maven
 
 install: scripts/jping target/jping.jar 
 	install -m 755 -o qsys -D -d ${INSTALL_ROOT}/QOpenSys/pkgs/bin ${INSTALL_ROOT}/QOpenSys/pkgs/lib/jping
@@ -32,14 +35,3 @@ tarball.build/jping.tar.gz: target/jping.jar scripts/jping scripts/jping.ibmi
 	cp scripts/* tarball.build/bin/
 	cp target/jping.jar tarball.build/lib
 	cd tarball.build && tar cvf jping.tar bin lib && gzip jping.tar
-
-
-zipball: zipball.build/jping.zip
-
-zipball.build/jping.zip: target/jping.jar scripts/jping scripts/jping.ibmi
-        rm -fr zipball.build
-        mkdir -p zipball.build/bin
-        mkdir -p zipball.build/lib
-        cp scripts/* zipball.build/bin/
-        cp target/jping.jar tarball.build/lib
-        cd tarball.build && zip -0 jping.zip bin lib
