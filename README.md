@@ -1,3 +1,3 @@
-a ping command
+ping command
 
 
