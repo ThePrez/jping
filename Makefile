@@ -37,9 +37,9 @@ tarball.build/jping.tar.gz: target/jping.jar scripts/jping scripts/jping.ibmi
 zipball: zipball.build/jping.zip
 
 zipball.build/jping.zip: target/jping.jar scripts/jping scripts/jping.ibmi
-        rm -fr zipball.build
-        mkdir -p zipball.build/bin
-        mkdir -p zipball.build/lib
-        cp scripts/* zipball.build/bin/
-        cp target/jping.jar tarball.build/lib
-        cd tarball.build && zip -0 jping.zip bin lib
+	rm -fr zipball.build
+	mkdir -p zipball.build/bin
+	mkdir -p zipball.build/lib
+	cp scripts/* zipball.build/bin/
+	cp target/jping.jar tarball.build/lib
+	cd tarball.build && zip -0 jping.zip bin lib
